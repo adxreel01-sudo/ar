@@ -1,45 +1,55 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
+import React, { useEffect, useState } from 'react';
+import { View, Image, StyleSheet, Dimensions, PanResponder } from 'react-native';
+import { Camera } from 'expo-camera';
 
-import { NewAppScreen } from '@react-native/new-app-screen';
-import { StatusBar, StyleSheet, useColorScheme, View } from 'react-native';
-import {
-  SafeAreaProvider,
-  useSafeAreaInsets,
-} from 'react-native-safe-area-context';
+const { width, height } = Dimensions.get('window');
 
-function App() {
-  const isDarkMode = useColorScheme() === 'dark';
+export default function App() {
+  const [permission, requestPermission] = Camera.useCameraPermissions();
+  const [position, setPosition] = useState({ x: width / 4, y: height / 3 });
+  const [scale, setScale] = useState(1);
 
-  return (
-    <SafeAreaProvider>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      <AppContent />
-    </SafeAreaProvider>
-  );
-}
+  useEffect(() => {
+    if (!permission) requestPermission();
+  }, []);
 
-function AppContent() {
-  const safeAreaInsets = useSafeAreaInsets();
+  const panResponder = PanResponder.create({
+    onMoveShouldSetPanResponder: () => true,
+    onPanResponderMove: (_, g) => {
+      setPosition({ x: g.moveX - 100, y: g.moveY - 100 });
+    },
+  });
+
+  if (!permission?.granted) return <View />;
 
   return (
     <View style={styles.container}>
-      <NewAppScreen
-        templateFileName="App.tsx"
-        safeAreaInsets={safeAreaInsets}
+      <Camera style={styles.camera} type="front" />
+
+      <Image
+        source={require('./assets/shirt.png')}
+        style={[
+          styles.shirt,
+          {
+            left: position.x,
+            top: position.y,
+            transform: [{ scale }],
+          },
+        ]}
+        {...panResponder.panHandlers}
       />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  container: { flex: 1 },
+  camera: { flex: 1 },
+  shirt: {
+    position: 'absolute',
+    width: 200,
+    height: 250,
+    resizeMode: 'contain',
+    opacity: 0.9,
   },
 });
-
-export default App;
